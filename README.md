@@ -20,20 +20,20 @@ need to be specified. When using multiple schema repositories, this repo can be 
 # All 3 are equivalent
 $ kubeconform deployment.yaml
 $ kubeconform -schema-location default deployment.yaml
-$ kubeconform -schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json' deployment.yaml
+$ kubeconform -schema-location 'https://raw.githubusercontent.com/dot-deamon/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json' deployment.yaml
 Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
 ```
 
 ### Kubeval
 
 ```
-$ kubeval --strict --schema-location https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/ deployment.yaml
+$ kubeval --strict --schema-location https://raw.githubusercontent.com/dot-deamon/kubernetes-json-schema/master/ deployment.yaml
 PASS - deployment.yaml contains a valid Deployment
 ```
 
 To run `kubeval` against a specific Kubernetes version, pass the `-v` argument
 ```sh
-$ kubeval -v 1.19.8 -s  https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master ingress.yaml
+$ kubeval -v 1.19.8 -s  https://raw.githubusercontent.com/dot-deamon/kubernetes-json-schema/master ingress.yaml
 PASS - ingress.yaml contains a valid Ingress (ingress)
 ```
 
