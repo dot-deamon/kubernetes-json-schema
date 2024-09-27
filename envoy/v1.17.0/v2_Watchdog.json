@@ -1,0 +1,37 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Watchdog",
+    "definitions": {
+        "Watchdog": {
+            "properties": {
+                "miss_timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "The duration after which Envoy counts a nonresponsive thread in the\n *watchdog_miss* statistic. If not specified the default is 200ms.",
+                    "format": "regex"
+                },
+                "megamiss_timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "The duration after which Envoy counts a nonresponsive thread in the\n *watchdog_mega_miss* statistic. If not specified the default is\n 1000ms.",
+                    "format": "regex"
+                },
+                "kill_timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "If a watched thread has been nonresponsive for this duration, assume a\n programming error and kill the entire Envoy process. Set to 0 to disable\n kill behavior. If not specified the default is 0 (disabled).",
+                    "format": "regex"
+                },
+                "multikill_timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "If at least two watched threads have been nonresponsive for at least this\n duration assume a true deadlock and kill the entire Envoy process. Set to 0\n to disable this behavior. If not specified the default is 0 (disabled).",
+                    "format": "regex"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Envoy process watchdog configuration. When configured, this monitors for\n nonresponsive threads and kills the process after the configured thresholds.\n See the :ref:`watchdog documentation \u003coperations_performance_watchdog\u003e` for more information."
+        }
+    }
+}

@@ -1,0 +1,621 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/LayeredRuntime",
+    "definitions": {
+        "LayeredRuntime": {
+            "properties": {
+                "layers": {
+                    "items": {
+                        "$ref": "#/definitions/envoy.config.bootstrap.v3.RuntimeLayer"
+                    },
+                    "type": "array",
+                    "description": "The :ref:`layers \u003cconfig_runtime_layering\u003e` of the runtime. This is ordered\n such that later layers in the list overlay earlier entries."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Runtime :ref:`configuration overview \u003cconfig_runtime\u003e`."
+        },
+        "envoy.config.bootstrap.v3.RuntimeLayer": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Descriptive name for the runtime layer. This is only used for the runtime\n :http:get:`/runtime` output."
+                },
+                "static_layer": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": ":ref:`Static runtime \u003cconfig_runtime_bootstrap\u003e` layer.\n This follows the :ref:`runtime protobuf JSON representation encoding\n \u003cconfig_runtime_proto_json\u003e`. Unlike static xDS resources, this static\n layer is overridable by later layers in the runtime virtual filesystem."
+                },
+                "disk_layer": {
+                    "$ref": "#/definitions/envoy.config.bootstrap.v3.RuntimeLayer.DiskLayer",
+                    "additionalProperties": true
+                },
+                "admin_layer": {
+                    "$ref": "#/definitions/envoy.config.bootstrap.v3.RuntimeLayer.AdminLayer",
+                    "additionalProperties": true
+                },
+                "rtds_layer": {
+                    "$ref": "#/definitions/envoy.config.bootstrap.v3.RuntimeLayer.RtdsLayer",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "[#next-free-field: 6]"
+        },
+        "envoy.config.bootstrap.v3.RuntimeLayer.AdminLayer": {
+            "additionalProperties": true,
+            "type": "object",
+            "description": ":ref:`Admin console runtime \u003cconfig_runtime_admin\u003e` layer."
+        },
+        "envoy.config.bootstrap.v3.RuntimeLayer.DiskLayer": {
+            "properties": {
+                "symlink_root": {
+                    "type": "string",
+                    "description": "The implementation assumes that the file system tree is accessed via a\n symbolic link. An atomic link swap is used when a new tree should be\n switched to. This parameter specifies the path to the symbolic link.\n Envoy will watch the location for changes and reload the file system tree\n when they happen. See documentation on runtime :ref:`atomicity\n \u003cconfig_runtime_atomicity\u003e` for further details on how reloads are\n treated."
+                },
+                "subdirectory": {
+                    "type": "string",
+                    "description": "Specifies the subdirectory to load within the root directory. This is\n useful if multiple systems share the same delivery mechanism. Envoy\n configuration elements can be contained in a dedicated subdirectory."
+                },
+                "append_service_cluster": {
+                    "type": "boolean",
+                    "description": ":ref:`Append \u003cconfig_runtime_local_disk_service_cluster_subdirs\u003e` the\n service cluster to the path under symlink root."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": ":ref:`Disk runtime \u003cconfig_runtime_local_disk\u003e` layer."
+        },
+        "envoy.config.bootstrap.v3.RuntimeLayer.RtdsLayer": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Resource to subscribe to at *rtds_config* for the RTDS layer."
+                },
+                "rtds_config": {
+                    "$ref": "#/definitions/envoy.config.core.v3.ConfigSource",
+                    "additionalProperties": true,
+                    "description": "RTDS configuration source."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": ":ref:`Runtime Discovery Service (RTDS) \u003cconfig_runtime_rtds\u003e` layer."
+        },
+        "envoy.config.core.v3.AggregatedConfigSource": {
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Aggregated Discovery Service (ADS) options. This is currently empty, but when\n set in :ref:`ConfigSource \u003cenvoy_api_msg_config.core.v3.ConfigSource\u003e` can be used to\n specify that ADS is to be used."
+        },
+        "envoy.config.core.v3.ApiConfigSource": {
+            "properties": {
+                "api_type": {
+                    "enum": [
+                        "DEPRECATED_AND_UNAVAILABLE_DO_NOT_USE",
+                        0,
+                        "REST",
+                        1,
+                        "GRPC",
+                        2,
+                        "DELTA_GRPC",
+                        3,
+                        "AGGREGATED_GRPC",
+                        5,
+                        "AGGREGATED_DELTA_GRPC",
+                        6
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "description": "APIs may be fetched via either REST or gRPC."
+                },
+                "transport_api_version": {
+                    "enum": [
+                        "AUTO",
+                        0,
+                        "V2",
+                        1,
+                        "V3",
+                        2
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "description": "[#protodoc-title: Configuration sources]\n\nxDS API and non-xDS services version. This is used to describe both resource and transport\n protocol versions (in distinct configuration fields)."
+                },
+                "cluster_names": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Cluster names should be used only with REST. If \u003e 1\n cluster is defined, clusters will be cycled through if any kind of failure\n occurs.\n\n .. note::\n\n  The cluster with name ``cluster_name`` must be statically defined and its\n  type must not be ``EDS``."
+                },
+                "grpc_services": {
+                    "items": {
+                        "$ref": "#/definitions/envoy.config.core.v3.GrpcService"
+                    },
+                    "type": "array",
+                    "description": "Multiple gRPC services be provided for GRPC. If \u003e 1 cluster is defined,\n services will be cycled through if any kind of failure occurs."
+                },
+                "refresh_delay": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "For REST APIs, the delay between successive polls.",
+                    "format": "regex"
+                },
+                "request_timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "For REST APIs, the request timeout. If not set, a default value of 1s will be used.",
+                    "format": "regex"
+                },
+                "rate_limit_settings": {
+                    "$ref": "#/definitions/envoy.config.core.v3.RateLimitSettings",
+                    "additionalProperties": true,
+                    "description": "For GRPC APIs, the rate limit settings. If present, discovery requests made by Envoy will be\n rate limited."
+                },
+                "set_node_on_first_message_only": {
+                    "type": "boolean",
+                    "description": "Skip the node identifier in subsequent discovery requests for streaming gRPC config types."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "API configuration source. This identifies the API type and cluster that Envoy\n will use to fetch an xDS API.\n [#next-free-field: 9]"
+        },
+        "envoy.config.core.v3.ConfigSource": {
+            "properties": {
+                "authorities": {
+                    "items": {
+                        "$ref": "#/definitions/xds.core.v3.Authority"
+                    },
+                    "type": "array",
+                    "description": "Authorities that this config source may be used for. An authority specified in a xdstp:// URL\n is resolved to a *ConfigSource* prior to configuration fetch. This field provides the\n association between authority name and configuration source.\n [#not-implemented-hide:]"
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Path on the filesystem to source and watch for configuration updates.\n When sourcing configuration for :ref:`secret \u003cenvoy_api_msg_extensions.transport_sockets.tls.v3.Secret\u003e`,\n the certificate and key files are also watched for updates.\n\n .. note::\n\n  The path to the source must exist at config load time.\n\n .. note::\n\n   Envoy will only watch the file path for *moves.* This is because in general only moves\n   are atomic. The same method of swapping files as is demonstrated in the\n   :ref:`runtime documentation \u003cconfig_runtime_symbolic_link_swap\u003e` can be used here also."
+                },
+                "api_config_source": {
+                    "$ref": "#/definitions/envoy.config.core.v3.ApiConfigSource",
+                    "additionalProperties": true,
+                    "description": "API configuration source."
+                },
+                "ads": {
+                    "$ref": "#/definitions/envoy.config.core.v3.AggregatedConfigSource",
+                    "additionalProperties": true,
+                    "description": "When set, ADS will be used to fetch resources. The ADS API configuration\n source in the bootstrap configuration is used."
+                },
+                "self": {
+                    "$ref": "#/definitions/envoy.config.core.v3.SelfConfigSource",
+                    "additionalProperties": true,
+                    "description": "[#not-implemented-hide:]\n When set, the client will access the resources from the same server it got the\n ConfigSource from, although not necessarily from the same stream. This is similar to the\n :ref:`ads\u003cenvoy_api_field.ConfigSource.ads\u003e` field, except that the client may use a\n different stream to the same server. As a result, this field can be used for things\n like LRS that cannot be sent on an ADS stream. It can also be used to link from (e.g.)\n LDS to RDS on the same server without requiring the management server to know its name\n or required credentials.\n [#next-major-version: In xDS v3, consider replacing the ads field with this one, since\n this field can implicitly mean to use the same stream in the case where the ConfigSource\n is provided via ADS and the specified data can also be obtained via ADS.]"
+                },
+                "initial_fetch_timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "When this timeout is specified, Envoy will wait no longer than the specified time for first\n config response on this xDS subscription during the :ref:`initialization process\n \u003carch_overview_initialization\u003e`. After reaching the timeout, Envoy will move to the next\n initialization phase, even if the first config is not delivered yet. The timer is activated\n when the xDS API subscription starts, and is disarmed on first config update or on error. 0\n means no timeout - Envoy will wait indefinitely for the first xDS config (unless another\n timeout applies). The default is 15s.",
+                    "format": "regex"
+                },
+                "resource_api_version": {
+                    "enum": [
+                        "AUTO",
+                        0,
+                        "V2",
+                        1,
+                        "V3",
+                        2
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "description": "[#protodoc-title: Configuration sources]\n\nxDS API and non-xDS services version. This is used to describe both resource and transport\n protocol versions (in distinct configuration fields)."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Configuration for :ref:`listeners \u003cconfig_listeners\u003e`, :ref:`clusters\n \u003cconfig_cluster_manager\u003e`, :ref:`routes\n \u003cenvoy_api_msg_config.route.v3.RouteConfiguration\u003e`, :ref:`endpoints\n \u003carch_overview_service_discovery\u003e` etc. may either be sourced from the\n filesystem or from an xDS API source. Filesystem configs are watched with\n inotify for updates.\n [#next-free-field: 8]"
+        },
+        "envoy.config.core.v3.DataSource": {
+            "properties": {
+                "filename": {
+                    "type": "string",
+                    "description": "Local filesystem data source."
+                },
+                "inline_bytes": {
+                    "type": "string",
+                    "description": "Bytes inlined in the configuration.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "inline_string": {
+                    "type": "string",
+                    "description": "String inlined in the configuration."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Data source consisting of either a file or an inline value."
+        },
+        "envoy.config.core.v3.GrpcService": {
+            "properties": {
+                "envoy_grpc": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.EnvoyGrpc",
+                    "additionalProperties": true,
+                    "description": "Envoy's in-built gRPC client.\n See the :ref:`gRPC services overview \u003carch_overview_grpc_services\u003e`\n documentation for discussion on gRPC client selection."
+                },
+                "google_grpc": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc",
+                    "additionalProperties": true,
+                    "description": "`Google C++ gRPC client \u003chttps://github.com/grpc/grpc\u003e`_\n See the :ref:`gRPC services overview \u003carch_overview_grpc_services\u003e`\n documentation for discussion on gRPC client selection."
+                },
+                "timeout": {
+                    "pattern": "^([0-9]+\\.?[0-9]*|\\.[0-9]+)s$",
+                    "type": "string",
+                    "description": "The timeout for the gRPC request. This is the timeout for a specific\n request.",
+                    "format": "regex"
+                },
+                "initial_metadata": {
+                    "items": {
+                        "$ref": "#/definitions/envoy.config.core.v3.HeaderValue"
+                    },
+                    "type": "array",
+                    "description": "Additional metadata to include in streams initiated to the GrpcService. This can be used for\n scenarios in which additional ad hoc authorization headers (e.g. ``x-foo-bar: baz-key``) are to\n be injected. For more information, including details on header value syntax, see the\n documentation on :ref:`custom request headers\n \u003cconfig_http_conn_man_headers_custom_request_headers\u003e`."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "[#protodoc-title: gRPC services]\n\ngRPC service configuration. This is used by :ref:`ApiConfigSource\n \u003cenvoy_api_msg_config.core.v3.ApiConfigSource\u003e` and filter configurations.\n [#next-free-field: 6]"
+        },
+        "envoy.config.core.v3.GrpcService.EnvoyGrpc": {
+            "properties": {
+                "cluster_name": {
+                    "type": "string",
+                    "description": "The name of the upstream gRPC cluster. SSL credentials will be supplied\n in the :ref:`Cluster \u003cenvoy_api_msg_config.cluster.v3.Cluster\u003e` :ref:`transport_socket\n \u003cenvoy_api_field_config.cluster.v3.Cluster.transport_socket\u003e`."
+                },
+                "authority": {
+                    "type": "string",
+                    "description": "The `:authority` header in the grpc request. If this field is not set, the authority header value will be `cluster_name`.\n Note that this authority does not override the SNI. The SNI is provided by the transport socket of the cluster."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc": {
+            "properties": {
+                "target_uri": {
+                    "type": "string",
+                    "description": "The target URI when using the `Google C++ gRPC client\n \u003chttps://github.com/grpc/grpc\u003e`_. SSL credentials will be supplied in\n :ref:`channel_credentials \u003cenvoy_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials\u003e`."
+                },
+                "channel_credentials": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelCredentials",
+                    "additionalProperties": true
+                },
+                "call_credentials": {
+                    "items": {
+                        "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials"
+                    },
+                    "type": "array",
+                    "description": "A set of call credentials that can be composed with `channel credentials\n \u003chttps://grpc.io/docs/guides/auth.html#credential-types\u003e`_."
+                },
+                "stat_prefix": {
+                    "type": "string",
+                    "description": "The human readable prefix to use when emitting statistics for the gRPC\n service.\n\n .. csv-table::\n    :header: Name, Type, Description\n    :widths: 1, 1, 2\n\n    streams_total, Counter, Total number of streams opened\n    streams_closed_\u003cgRPC status code\u003e, Counter, Total streams closed with \u003cgRPC status code\u003e"
+                },
+                "credentials_factory_name": {
+                    "type": "string",
+                    "description": "The name of the Google gRPC credentials factory to use. This must have been registered with\n Envoy. If this is empty, a default credentials factory will be used that sets up channel\n credentials based on other configuration parameters."
+                },
+                "config": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "Additional configuration for site-specific customizations of the Google\n gRPC library."
+                },
+                "per_stream_buffer_limit_bytes": {
+                    "additionalProperties": true,
+                    "type": "integer",
+                    "description": "How many bytes each stream can buffer internally.\n If not set an implementation defined default is applied (1MiB)."
+                },
+                "channel_args": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs",
+                    "additionalProperties": true,
+                    "description": "Custom channels args."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "[#next-free-field: 9]"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials": {
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "description": "Access token credentials.\n https://grpc.io/grpc/cpp/namespacegrpc.html#ad3a80da696ffdaea943f0f858d7a360d."
+                },
+                "google_compute_engine": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "Google Compute Engine credentials.\n https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61"
+                },
+                "google_refresh_token": {
+                    "type": "string",
+                    "description": "Google refresh token credentials.\n https://grpc.io/grpc/cpp/namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c."
+                },
+                "service_account_jwt_access": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.ServiceAccountJWTAccessCredentials",
+                    "additionalProperties": true,
+                    "description": "Service Account JWT Access credentials.\n https://grpc.io/grpc/cpp/namespacegrpc.html#a92a9f959d6102461f66ee973d8e9d3aa."
+                },
+                "google_iam": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.GoogleIAMCredentials",
+                    "additionalProperties": true,
+                    "description": "Google IAM credentials.\n https://grpc.io/grpc/cpp/namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0."
+                },
+                "from_plugin": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.MetadataCredentialsFromPlugin",
+                    "additionalProperties": true,
+                    "description": "Custom authenticator credentials.\n https://grpc.io/grpc/cpp/namespacegrpc.html#a823c6a4b19ffc71fb33e90154ee2ad07.\n https://grpc.io/docs/guides/auth.html#extending-grpc-to-support-other-authentication-mechanisms."
+                },
+                "sts_service": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.StsService",
+                    "additionalProperties": true,
+                    "description": "Custom security token service which implements OAuth 2.0 token exchange.\n https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16\n See https://github.com/grpc/grpc/pull/19587."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "[#next-free-field: 8]"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.GoogleIAMCredentials": {
+            "properties": {
+                "authorization_token": {
+                    "type": "string"
+                },
+                "authority_selector": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.MetadataCredentialsFromPlugin": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "typed_config": {
+                    "properties": {
+                        "type_url": {
+                            "type": "string",
+                            "description": "A URL/resource name that uniquely identifies the type of the serialized\n protocol buffer message. This string must contain at least\n one \"/\" character. The last segment of the URL's path must represent\n the fully qualified name of the type (as in\n `path/google.protobuf.Duration`). The name should be in a canonical form\n (e.g., leading \".\" is not accepted).\n\n In practice, teams usually precompile into the binary all types that they\n expect it to use in the context of Any. However, for URLs which use the\n scheme `http`, `https`, or no scheme, one can optionally set up a type\n server that maps type URLs to message definitions as follows:\n\n * If no scheme is provided, `https` is assumed.\n * An HTTP GET on the URL must yield a [google.protobuf.Type][]\n   value in binary format, or produce an error.\n * Applications are allowed to cache lookup results based on the\n   URL, or have them precompiled into a binary to avoid any\n   lookup. Therefore, binary compatibility needs to be preserved\n   on changes to types. (Use versioned type names to manage\n   breaking changes.)\n\n Note: this functionality is not currently available in the official\n protobuf release, and it is not used for type URLs beginning with\n type.googleapis.com.\n\n Schemes other than `http`, `https` (or the empty scheme) might be\n used with implementation specific semantics."
+                        },
+                        "value": {
+                            "type": "string",
+                            "description": "Must be a valid serialized protocol buffer of the above specified type.",
+                            "format": "binary",
+                            "binaryEncoding": "base64"
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.ServiceAccountJWTAccessCredentials": {
+            "properties": {
+                "json_key": {
+                    "type": "string"
+                },
+                "token_lifetime_seconds": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.StsService": {
+            "properties": {
+                "token_exchange_service_uri": {
+                    "type": "string",
+                    "description": "URI of the token exchange service that handles token exchange requests.\n [#comment:TODO(asraa): Add URI validation when implemented. Tracked by\n https://github.com/envoyproxy/protoc-gen-validate/issues/303]"
+                },
+                "resource": {
+                    "type": "string",
+                    "description": "Location of the target service or resource where the client\n intends to use the requested security token."
+                },
+                "audience": {
+                    "type": "string",
+                    "description": "Logical name of the target service where the client intends to\n use the requested security token."
+                },
+                "scope": {
+                    "type": "string",
+                    "description": "The desired scope of the requested security token in the\n context of the service or resource where the token will be used."
+                },
+                "requested_token_type": {
+                    "type": "string",
+                    "description": "Type of the requested security token."
+                },
+                "subject_token_path": {
+                    "type": "string",
+                    "description": "The path of subject token, a security token that represents the\n identity of the party on behalf of whom the request is being made."
+                },
+                "subject_token_type": {
+                    "type": "string",
+                    "description": "Type of the subject token."
+                },
+                "actor_token_path": {
+                    "type": "string",
+                    "description": "The path of actor token, a security token that represents the identity\n of the acting party. The acting party is authorized to use the\n requested security token and act on behalf of the subject."
+                },
+                "actor_token_type": {
+                    "type": "string",
+                    "description": "Type of the actor token."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Security token service configuration that allows Google gRPC to\n fetch security token from an OAuth 2.0 authorization server.\n See https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16 and\n https://github.com/grpc/grpc/pull/19587.\n [#next-free-field: 10]"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs": {
+            "properties": {
+                "args": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.Value",
+                        "additionalProperties": true
+                    },
+                    "type": "object",
+                    "description": "See grpc_types.h GRPC_ARG #defines for keys that work here."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Channel arguments."
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.Value": {
+            "properties": {
+                "string_value": {
+                    "type": "string"
+                },
+                "int_value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelCredentials": {
+            "properties": {
+                "ssl_credentials": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.SslCredentials",
+                    "additionalProperties": true
+                },
+                "google_default": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61"
+                },
+                "local_credentials": {
+                    "$ref": "#/definitions/envoy.config.core.v3.GrpcService.GoogleGrpc.GoogleLocalCredentials",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "See https://grpc.io/docs/guides/auth.html#credential-types to understand Channel and Call\n credential types."
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.GoogleLocalCredentials": {
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Local channel credentials. Only UDS is supported for now.\n See https://github.com/grpc/grpc/pull/15909."
+        },
+        "envoy.config.core.v3.GrpcService.GoogleGrpc.SslCredentials": {
+            "properties": {
+                "root_certs": {
+                    "$ref": "#/definitions/envoy.config.core.v3.DataSource",
+                    "additionalProperties": true,
+                    "description": "PEM encoded server root certificates."
+                },
+                "private_key": {
+                    "$ref": "#/definitions/envoy.config.core.v3.DataSource",
+                    "additionalProperties": true,
+                    "description": "PEM encoded client private key."
+                },
+                "cert_chain": {
+                    "$ref": "#/definitions/envoy.config.core.v3.DataSource",
+                    "additionalProperties": true,
+                    "description": "PEM encoded client certificate chain."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "See https://grpc.io/grpc/cpp/structgrpc_1_1_ssl_credentials_options.html."
+        },
+        "envoy.config.core.v3.HeaderValue": {
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "description": "Header name."
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Header value.\n\n The same :ref:`format specifier \u003cconfig_access_log_format\u003e` as used for\n :ref:`HTTP access logging \u003cconfig_access_log\u003e` applies here, however\n unknown header values are replaced with the empty string instead of `-`."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Header name/value pair."
+        },
+        "envoy.config.core.v3.RateLimitSettings": {
+            "properties": {
+                "max_tokens": {
+                    "additionalProperties": true,
+                    "type": "integer",
+                    "description": "Maximum number of tokens to be used for rate limiting discovery request calls. If not set, a\n default value of 100 will be used."
+                },
+                "fill_rate": {
+                    "additionalProperties": true,
+                    "type": "number",
+                    "description": "Rate at which tokens will be filled per second. If not set, a default fill rate of 10 tokens\n per second will be used."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Rate Limit settings to be applied for discovery requests made by Envoy."
+        },
+        "envoy.config.core.v3.SelfConfigSource": {
+            "properties": {
+                "transport_api_version": {
+                    "enum": [
+                        "AUTO",
+                        0,
+                        "V2",
+                        1,
+                        "V3",
+                        2
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "description": "[#protodoc-title: Configuration sources]\n\nxDS API and non-xDS services version. This is used to describe both resource and transport\n protocol versions (in distinct configuration fields)."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "[#not-implemented-hide:]\n Self-referencing config source options. This is currently empty, but when\n set in :ref:`ConfigSource \u003cenvoy_api_msg_config.core.v3.ConfigSource\u003e` can be used to\n specify that other data can be obtained from the same server."
+        },
+        "xds.core.v3.Authority": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "xDS authority information."
+        }
+    }
+}
