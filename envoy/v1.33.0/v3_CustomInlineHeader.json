@@ -1,0 +1,37 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/CustomInlineHeader",
+    "definitions": {
+        "CustomInlineHeader": {
+            "properties": {
+                "inline_header_name": {
+                    "type": "string",
+                    "description": "The name of the header that is expected to be set as the inline header."
+                },
+                "inline_header_type": {
+                    "enum": [
+                        "REQUEST_HEADER",
+                        0,
+                        "REQUEST_TRAILER",
+                        1,
+                        "RESPONSE_HEADER",
+                        2,
+                        "RESPONSE_TRAILER",
+                        3
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Used to specify the header that needs to be registered as an inline header.\n\n If request or response contain multiple headers with the same name and the header\n name is registered as an inline header. Then multiple headers will be folded\n into one, and multiple header values will be concatenated by a suitable delimiter.\n The delimiter is generally a comma.\n\n For example, if 'foo' is registered as an inline header, and the headers contains\n the following two headers:\n\n .. code-block:: text\n\n   foo: bar\n   foo: eep\n\n Then they will eventually be folded into:\n\n .. code-block:: text\n\n   foo: bar, eep\n\n Inline headers provide O(1) search performance, but each inline header imposes\n an additional memory overhead on all instances of the corresponding type of\n HeaderMap or TrailerMap."
+        }
+    }
+}
